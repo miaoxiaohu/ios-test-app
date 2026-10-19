@@ -1,0 +1,80 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+# 同一分支的重复推送只保留最新一次构建
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build unsigned iOS ipa
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # 仓库里没有 ios/ 目录（目录名 ios-test-app 带连字符，Flutter 也不认这个包名），
+      # 所以在临时目录里生成标准 iOS 工程，再只把 ios/ 拷回来。
+      # 这样 pubspec.yaml 和 lib/main.dart 完全不会被 flutter create 覆盖。
+      - name: Generate iOS platform files
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/scaffold"
+          flutter create --platforms=ios --org com.example --project-name ios_test_app "$RUNNER_TEMP/scaffold"
+          cp -R "$RUNNER_TEMP/scaffold/ios" ./ios
+          test -d ios/Runner.xcodeproj
+          echo "iOS project generated at ./ios"
+
+      - name: Build unsigned iOS app
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build ios --release --no-codesign
+
+      - name: Package as unsigned ipa
+        run: |
+          set -euo pipefail
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+          cd build/ipa && zip -qry ../ios-test-app-unsigned.ipa Payload
+          ls -lh ../ios-test-app-unsigned.ipa
+
+      # 防"假绿"：构建步骤返回 0 不代表包里东西是对的，这里把关键文件点一遍
+      - name: Verify ipa structure
+        run: |
+          set -euo pipefail
+          unzip -l build/ios-test-app-unsigned.ipa > /tmp/ipa_list.txt
+          for f in \
+            "Payload/Runner.app/Runner" \
+            "Payload/Runner.app/Frameworks/Flutter.framework/Flutter" \
+            "Payload/Runner.app/Frameworks/App.framework/App" \
+            "Payload/Runner.app/flutter_assets/AssetManifest.bin" ; do
+            if ! grep -q "$f" /tmp/ipa_list.txt ; then
+              echo "MISSING in ipa: $f"
+              exit 1
+            fi
+          done
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" build/ios/iphoneos/Runner.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build/ios/iphoneos/Runner.app/Info.plist
+          echo "ipa structure OK"
+
+      - name: Upload ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-app-unsigned-ipa
+          path: build/ios-test-app-unsigned.ipa
+          retention-days: 30
+          if-no-files-found: error
