@@ -1,0 +1,23 @@
+# Miscellaneous
+*.log
+*.tmp
+.DS_Store
+
+# Flutter specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# iOS
+ios/Pods/
+ios/Podfile.lock
+ios/.symlinks
+**/Pods/
+
+# Android
+android/.gradle/
+android/app/build/
