@@ -175,9 +175,14 @@ void main() {
       type(c, '12');
       c.setOperation(Operation.add);
       type(c, '3');
+      c.equals();
+      expect(c.display, '15');
+      // 等号之后处于空闲状态，清除键变回 AC
+      expect(c.clearLabel, 'AC');
       c.clear();
       expect(c.display, '0');
       expect(c.clearLabel, 'AC');
+      // AC 之后没有任何待完成的运算，再按等号不会凭空算出结果
       c.equals();
       expect(c.display, '0');
     });

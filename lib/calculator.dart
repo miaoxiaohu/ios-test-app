@@ -213,24 +213,20 @@ class Calculator {
       s.replaceAll('-', '').replaceAll('.', '').length;
 
   double _apply(double a, Operation operation, double b) {
-    switch (operation) {
-      case Operation.add:
-        return a + b;
-      case Operation.subtract:
-        return a - b;
-      case Operation.multiply:
-        return a * b;
-      case Operation.divide:
-        if (b == 0) {
-          _hasError = true;
-          _entry = '0';
-          _pending = null;
-          _entering = false;
-          _justEvaluated = false;
-          throw const DivisionByZeroException();
-        }
-        return a / b;
+    if (operation == Operation.divide && b == 0) {
+      _hasError = true;
+      _entry = '0';
+      _pending = null;
+      _entering = false;
+      _justEvaluated = false;
+      throw const DivisionByZeroException();
     }
+    return switch (operation) {
+      Operation.add => a + b,
+      Operation.subtract => a - b,
+      Operation.multiply => a * b,
+      Operation.divide => a / b,
+    };
   }
 
   /// 出错后按任意键都从零开始。
