@@ -1,0 +1,40 @@
+workflows:
+  ios_test:
+    name: iOS Test (unsigned)
+    instance_type: mac_mini_m2
+    max_build_duration: 40
+
+    environment:
+      flutter_channel: stable
+
+    scripts:
+      - name: Generate missing iOS platform files
+        script: |
+          set -e
+          # 仓库里只有 pubspec.yaml + lib/main.dart，缺 ios/ 平台目录。
+          # 云端有 Flutter，直接在这里补出来，无需本地 Windows 装 SDK。
+          cp pubspec.yaml /tmp/pubspec.yaml.bak
+          cp lib/main.dart /tmp/main.dart.bak
+          # 目录名 ios-test-app 带短横线，不是合法 Dart 包名，必须显式指定
+          flutter create --platforms=ios --org com.example --project-name ios_test_app .
+          cp /tmp/pubspec.yaml.bak pubspec.yaml
+          cp /tmp/main.dart.bak lib/main.dart
+          ls ios/Runner.xcodeproj >/dev/null && echo "ios project generated OK"
+
+      - name: Build unsigned iOS app
+        # 没有 Apple 开发者账号就签不了名，先产出未签名包验证流水线
+        script: flutter build ios --release --no-codesign
+
+      - name: Package app as unsigned ipa
+        script: |
+          set -e
+          rm -rf build/ipa
+          mkdir -p build/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ipa/Payload/
+          cd build/ipa
+          zip -qry ../ios-test-app-unsigned.ipa Payload
+          ls -la ../ios-test-app-unsigned.ipa
+
+    artifacts:
+      - build/ios/**/*.ipa
+      - build/ios/iphoneos/*.app
