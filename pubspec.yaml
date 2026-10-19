@@ -1,5 +1,5 @@
-name: ios_test_app
-description: A test iOS app for Codemagic CI/CD
+name: ios_calculator
+description: "计算器 —— 用 Flutter 写的 iOS 计算器，通过 GitHub Actions 构建。"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -8,6 +8,10 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
     sdk: flutter
 
 flutter:

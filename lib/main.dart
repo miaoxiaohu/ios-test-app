@@ -1,28 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'calculator_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations(
+    const [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown],
+  );
+  runApp(const CalculatorApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CalculatorApp extends StatelessWidget {
+  const CalculatorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'iOS Test App',
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Codemagic Test'),
-          backgroundColor: Colors.orange,
-        ),
-        body: const Center(
-          child: Text(
-            'Hello from Codemagic!',
-            style: TextStyle(fontSize: 24),
-          ),
-        ),
-      ),
+      title: '计算器',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(useMaterial3: true),
+      home: const CalculatorPage(),
     );
   }
 }
