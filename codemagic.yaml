@@ -33,5 +33,5 @@ workflows:
           ls -la ../ios-test-app-unsigned.ipa
 
     artifacts:
-      - build/ios/**/*.ipa
+      - build/*.ipa
       - build/ios/iphoneos/*.app
